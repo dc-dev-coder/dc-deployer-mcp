@@ -1,0 +1,370 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>DC Deployer</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Syne:wght@700;800&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg: #080b0f;
+    --surface: #0e1318;
+    --border: #1c2530;
+    --green: #00ff88;
+    --green-dim: #00ff8822;
+    --green-mid: #00ff8855;
+    --text: #c8d8e8;
+    --muted: #4a6070;
+    --accent: #0af;
+  }
+
+  html, body {
+    height: 100%;
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Space Mono', monospace;
+    overflow-x: hidden;
+  }
+
+  /* Scanline overlay */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background: repeating-linear-gradient(
+      0deg,
+      transparent,
+      transparent 2px,
+      rgba(0,0,0,0.07) 2px,
+      rgba(0,0,0,0.07) 4px
+    );
+    pointer-events: none;
+    z-index: 100;
+  }
+
+  /* Radial glow behind main content */
+  body::after {
+    content: '';
+    position: fixed;
+    top: 30%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 600px;
+    height: 400px;
+    background: radial-gradient(ellipse, rgba(0,255,136,0.04) 0%, transparent 70%);
+    pointer-events: none;
+  }
+
+  .wrap {
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 40px 20px;
+  }
+
+  /* ── Top badge ── */
+  .badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    border: 1px solid var(--border);
+    border-radius: 999px;
+    padding: 6px 14px;
+    font-size: 0.7rem;
+    color: var(--muted);
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    margin-bottom: 36px;
+  }
+  .badge-dot {
+    width: 6px; height: 6px;
+    border-radius: 50%;
+    background: var(--green);
+    box-shadow: 0 0 8px var(--green);
+    animation: pulse 2s ease-in-out infinite;
+  }
+  @keyframes pulse {
+    0%, 100% { opacity: 1; box-shadow: 0 0 8px var(--green); }
+    50% { opacity: 0.4; box-shadow: 0 0 3px var(--green); }
+  }
+
+  /* ── Wordmark ── */
+  .wordmark {
+    font-family: 'Syne', sans-serif;
+    font-weight: 800;
+    font-size: clamp(2.8rem, 10vw, 5.5rem);
+    line-height: 0.9;
+    letter-spacing: -0.03em;
+    text-align: center;
+    margin-bottom: 20px;
+    position: relative;
+  }
+  .wordmark .dc {
+    color: var(--green);
+    text-shadow: 0 0 40px rgba(0,255,136,0.3);
+  }
+  .wordmark .deployer {
+    color: var(--text);
+    display: block;
+  }
+
+  .tagline {
+    font-size: 0.72rem;
+    color: var(--muted);
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    text-align: center;
+    margin-bottom: 52px;
+  }
+
+  /* ── Status card ── */
+  .card {
+    width: 100%;
+    max-width: 480px;
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    background: var(--surface);
+    overflow: hidden;
+    margin-bottom: 24px;
+  }
+  .card-header {
+    padding: 12px 20px;
+    border-bottom: 1px solid var(--border);
+    font-size: 0.65rem;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: var(--muted);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .card-header::before {
+    content: '';
+    display: inline-block;
+    width: 8px; height: 8px;
+    border-radius: 2px;
+    background: var(--green-mid);
+    border: 1px solid var(--green);
+  }
+
+  .tool-list {
+    list-style: none;
+    padding: 8px 0;
+  }
+  .tool-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 16px;
+    padding: 14px 20px;
+    border-bottom: 1px solid var(--border);
+    transition: background 0.15s;
+  }
+  .tool-item:last-child { border-bottom: none; }
+  .tool-item:hover { background: rgba(0,255,136,0.02); }
+
+  .tool-icon {
+    font-size: 1rem;
+    line-height: 1.4;
+    flex-shrink: 0;
+    width: 22px;
+    text-align: center;
+  }
+  .tool-name {
+    font-size: 0.78rem;
+    color: var(--green);
+    font-weight: 700;
+    margin-bottom: 2px;
+    letter-spacing: 0.02em;
+  }
+  .tool-desc {
+    font-size: 0.68rem;
+    color: var(--muted);
+    line-height: 1.5;
+    font-family: 'Space Mono', monospace;
+  }
+
+  /* ── Endpoint display ── */
+  .endpoint-box {
+    width: 100%;
+    max-width: 480px;
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    background: var(--surface);
+    padding: 16px 20px;
+    margin-bottom: 24px;
+  }
+  .endpoint-label {
+    font-size: 0.62rem;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 10px;
+  }
+  .endpoint-url {
+    font-size: 0.78rem;
+    color: var(--accent);
+    word-break: break-all;
+    line-height: 1.5;
+  }
+  .endpoint-url span {
+    color: var(--muted);
+  }
+
+  /* ── Ping button ── */
+  .ping-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    background: var(--green-dim);
+    border: 1px solid var(--green-mid);
+    color: var(--green);
+    font-family: 'Space Mono', monospace;
+    font-size: 0.72rem;
+    font-weight: 700;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    padding: 12px 28px;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: background 0.2s, box-shadow 0.2s;
+    margin-bottom: 40px;
+  }
+  .ping-btn:hover {
+    background: rgba(0,255,136,0.12);
+    box-shadow: 0 0 20px rgba(0,255,136,0.1);
+  }
+  .ping-btn:active { transform: scale(0.98); }
+  .ping-result {
+    font-size: 0.68rem;
+    color: var(--muted);
+    margin-top: 10px;
+    min-height: 18px;
+    text-align: center;
+    letter-spacing: 0.05em;
+    transition: color 0.3s;
+  }
+  .ping-result.ok { color: var(--green); }
+  .ping-result.err { color: #ff5555; }
+
+  /* ── Footer ── */
+  .footer {
+    font-size: 0.62rem;
+    color: var(--muted);
+    letter-spacing: 0.1em;
+    text-align: center;
+  }
+  .footer a { color: var(--muted); text-decoration: none; }
+  .footer a:hover { color: var(--text); }
+
+  /* ── Animate in ── */
+  .fade-up {
+    opacity: 0;
+    transform: translateY(16px);
+    animation: fadeUp 0.5s ease forwards;
+  }
+  @keyframes fadeUp {
+    to { opacity: 1; transform: translateY(0); }
+  }
+  .delay-1 { animation-delay: 0.05s; }
+  .delay-2 { animation-delay: 0.12s; }
+  .delay-3 { animation-delay: 0.2s; }
+  .delay-4 { animation-delay: 0.28s; }
+  .delay-5 { animation-delay: 0.36s; }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <div class="badge fade-up">
+    <span class="badge-dot"></span>
+    MCP Server Active
+  </div>
+
+  <div class="wordmark fade-up delay-1">
+    <span class="dc">DC</span>
+    <span class="deployer">Deployer</span>
+  </div>
+
+  <p class="tagline fade-up delay-2">Claude → GitHub — Zero friction</p>
+
+  <div class="card fade-up delay-3">
+    <div class="card-header">Available Tools</div>
+    <ul class="tool-list">
+      <li class="tool-item">
+        <span class="tool-icon">⬆</span>
+        <div>
+          <div class="tool-name">write_files</div>
+          <div class="tool-desc">Push files to any GitHub repo with mapping rules. Supports multiple accounts.</div>
+        </div>
+      </li>
+      <li class="tool-item">
+        <span class="tool-icon">◎</span>
+        <div>
+          <div class="tool-name">list_accounts</div>
+          <div class="tool-desc">List all configured GitHub accounts available for deployment.</div>
+        </div>
+      </li>
+      <li class="tool-item">
+        <span class="tool-icon">◈</span>
+        <div>
+          <div class="tool-name">check_deployment</div>
+          <div class="tool-desc">Poll Vercel deployment status — READY, BUILDING, ERROR, etc.</div>
+        </div>
+      </li>
+    </ul>
+  </div>
+
+  <div class="endpoint-box fade-up delay-4">
+    <div class="endpoint-label">MCP Endpoint</div>
+    <div class="endpoint-url" id="endpointUrl">
+      <span>https://</span>your-project.vercel.app<span>/api/mcp</span>
+    </div>
+  </div>
+
+  <div style="display:flex;flex-direction:column;align-items:center;" class="fade-up delay-5">
+    <button class="ping-btn" onclick="ping()">
+      <span>◎</span> Ping Server
+    </button>
+    <div class="ping-result" id="pingResult"></div>
+  </div>
+
+  <p class="footer fade-up delay-5">
+    dc-deployer &nbsp;·&nbsp; <a href="https://github.com/dc-dev-coder/dc-deployer" target="_blank">github</a>
+  </p>
+
+</div>
+
+<script>
+  // Set real URL
+  document.getElementById('endpointUrl').innerHTML =
+    `<span>https://</span>${location.host}<span>/api/mcp</span>`;
+
+  async function ping() {
+    const el = document.getElementById('pingResult');
+    el.textContent = 'pinging...';
+    el.className = 'ping-result';
+    try {
+      const start = Date.now();
+      const res = await fetch('/api/mcp');
+      const ms = Date.now() - start;
+      if (res.ok) {
+        const data = await res.json();
+        el.textContent = `✓ online — ${ms}ms — ${data.tools?.length || 0} tools ready`;
+        el.className = 'ping-result ok';
+      } else {
+        el.textContent = `✗ server returned ${res.status}`;
+        el.className = 'ping-result err';
+      }
+    } catch (e) {
+      el.textContent = `✗ ${e.message}`;
+      el.className = 'ping-result err';
+    }
+  }
+</script>
+</body>
+</html>
