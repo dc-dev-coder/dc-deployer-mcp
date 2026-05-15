@@ -223,6 +223,7 @@ export default async function handler(req, res) {
   // Auth check
   if (API_KEY) {
     const provided =
+      req.query?.key ||
       req.headers["x-api-key"] ||
       (req.headers["authorization"] || "").replace("Bearer ", "");
     if (provided !== API_KEY) {
